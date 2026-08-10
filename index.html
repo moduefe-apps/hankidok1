@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>한 문장씩 키우는 독해력 · 문장 듣기</title>
+<style>
+:root{
+  --paper:#E9F1EE;
+  --card:#FFFFFF;
+  --ink:#1C3A33;
+  --soft:#5E7C74;
+  --line:#C8DBD5;
+  --go:#2E9E6B;
+  --again:#E9A21B;
+  --focus:#1F6FEB;
+  --bead:#CFE2DC;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",Pretendard,"Malgun Gothic",system-ui,sans-serif;
+  line-height:1.6;-webkit-text-size-adjust:100%;
+}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+
+/* ─── 학생 화면 ─────────────────────── */
+.screen{height:100svh;display:flex;flex-direction:column;max-width:520px;margin:0 auto;
+  padding:12px 18px 16px;overflow:hidden}
+
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto;
+  padding-bottom:10px;border-bottom:1px solid var(--line)}
+.titles{display:flex;flex-direction:column;gap:1px;padding-top:2px}
+.titles strong{font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.35;word-break:keep-all}
+.titles span{font-size:12.5px;font-weight:600;color:var(--soft)}
+
+.gear{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--soft)}
+.gear:hover{background:#DCE9E5}
+.gear svg{width:21px;height:21px;display:block}
+
+.main{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;padding:14px 0 0}
+
+.numchip{
+  flex:0 0 auto;width:76px;height:76px;border-radius:16px;
+  background:var(--card);border:1px solid var(--line);
+  display:grid;place-items:center;
+  font-size:21px;font-weight:800;letter-spacing:.02em;
+}
+
+.playrow{display:flex;align-items:center;justify-content:center;gap:52px;padding:2px 0 4px}
+.listen{
+  flex:0 0 auto;width:112px;height:112px;border-radius:50%;
+  background:var(--go);color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  box-shadow:0 5px 0 #248055;
+}
+.listen:active{transform:translateY(3px);box-shadow:0 2px 0 #248055}
+.listen span{font-size:18px;font-weight:800;letter-spacing:.1em}
+.listen[data-state=playing]{background:#248055;box-shadow:0 5px 0 #1B6544}
+
+.ear{width:38px;height:34px;flex:0 0 auto;display:block}
+.ear .arc{opacity:.55}
+.listen[data-state=playing] .ear{display:none}
+
+.wave{display:none;align-items:center;justify-content:center;gap:4px;height:34px;flex:0 0 auto}
+.listen[data-state=playing] .wave{display:flex}
+.wave i{width:5px;height:9px;border-radius:3px;background:#fff;display:block;
+  animation:bounce .9s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.12s}
+.wave i:nth-child(3){animation-delay:.24s}
+.wave i:nth-child(4){animation-delay:.36s}
+.wave i:nth-child(5){animation-delay:.48s}
+@keyframes bounce{0%,100%{height:9px}50%{height:30px}}
+@media (prefers-reduced-motion:reduce){
+  .wave i{animation:none;height:22px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .listen[data-state=idle] .ear .a1{animation:ping 2.4s ease-in-out infinite}
+  .listen[data-state=idle] .ear .a2{animation:ping 2.4s ease-in-out .3s infinite}
+  @keyframes ping{0%,70%,100%{opacity:.35}20%{opacity:1}}
+}
+
+/* 번호 고르기 */
+.pickscroll{flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:10px;
+  padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.picker{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.picker button{
+  aspect-ratio:1;border:1.5px solid var(--line);background:#FBFDFC;border-radius:13px;
+  font-size:21px;font-weight:800;color:var(--ink);
+}
+.picker button.done{background:var(--go);color:#fff;border-color:transparent}
+.picker button:active{background:#E4EFEB}
+.picker button[aria-current=true]{outline:3px solid var(--ink);outline-offset:2px}
+
+.slate{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  min-height:92px;display:grid;place-items:center;padding:16px;text-align:center;
+}
+.slate p{margin:0;font-size:24px;font-weight:600;line-height:1.45;letter-spacing:.01em;word-break:keep-all}
+.slate.blank p{font-size:15px;font-weight:500;color:var(--soft);letter-spacing:0}
+
+/* 듣기 버튼 */
+.listen{
+  align-self:center;width:136px;height:136px;border-radius:50%;
+  background:var(--go);color:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  box-shadow:0 6px 0 #248055;
+}
+.listen:active{transform:translateY(3px);box-shadow:0 3px 0 #248055}
+.listen span{font-size:20px;font-weight:800;letter-spacing:.1em}
+.listen[data-state=playing]{background:#248055;box-shadow:0 6px 0 #1B6544}
+
+.ear{width:46px;height:41px;display:block}
+.ear .arc{opacity:.55}
+.listen[data-state=playing] .ear{display:none}
+
+.wave{display:none;align-items:center;justify-content:center;gap:5px;height:41px}
+.listen[data-state=playing] .wave{display:flex}
+.wave i{width:7px;height:12px;border-radius:4px;background:#fff;display:block;
+  animation:bounce .9s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.12s}
+.wave i:nth-child(3){animation-delay:.24s}
+.wave i:nth-child(4){animation-delay:.36s}
+.wave i:nth-child(5){animation-delay:.48s}
+@keyframes bounce{0%,100%{height:12px}50%{height:36px}}
+@media (prefers-reduced-motion:reduce){
+  .wave i{animation:none;height:28px}
+  .ear .arc{opacity:.55}
+}
+@media (prefers-reduced-motion:no-preference){
+  .listen[data-state=idle] .ear .a1{animation:ping 2.4s ease-in-out infinite}
+  .listen[data-state=idle] .ear .a2{animation:ping 2.4s ease-in-out .3s infinite}
+  @keyframes ping{0%,70%,100%{opacity:.35}20%{opacity:1}}
+}
+
+/* 대기(받아쓸 시간) 표시 */
+.waiting{text-align:center;font-size:13.5px;font-weight:700;color:var(--again);min-height:18px;margin:-4px 0 -2px}
+.waiting.hide{visibility:hidden}
+
+.pair{display:flex;gap:9px}
+.pair button{
+  flex:1;background:var(--card);border:1px solid var(--line);border-radius:11px;
+  padding:13px 8px;font-size:16px;font-weight:700;
+}
+.pair button:disabled{opacity:.35}
+#again{background:var(--again);color:#fff;border-color:transparent}
+#again:disabled{background:var(--card);color:var(--ink);border-color:var(--line)}
+
+/* 진행 구슬 */
+/* 진행 막대 (문장이 많을 때) */
+.track{height:8px;border-radius:99px;background:var(--bead);margin-top:14px;flex:0 0 auto;overflow:hidden}
+.fill{height:100%;background:var(--go);border-radius:99px;width:0;transition:width .25s ease}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+
+/* 다 했어요 */
+.finish{text-align:center;padding:8px 0 0}
+.finish strong{display:block;font-size:22px;font-weight:800;margin-bottom:4px}
+.finish span{font-size:14px;color:var(--soft)}
+
+/* ─── 교사 설정 ─────────────────────── */
+.sheet{position:fixed;inset:0;background:rgba(20,44,38,.45);display:none;z-index:20;
+  align-items:flex-end;justify-content:center}
+.sheet[open]{display:flex}
+.panel{background:var(--paper);width:100%;max-width:520px;max-height:90svh;overflow:auto;
+  border-radius:18px 18px 0 0;padding:18px 18px 28px}
+.panel header{display:flex;align-items:center;justify-content:space-between}
+.panel h2{font-size:17px;font-weight:800;margin:0}
+.panel header{margin-bottom:16px}
+.panel .note{font-size:12.5px;color:var(--soft);margin:0 0 16px}
+.close{font-size:15px;font-weight:700;color:var(--soft);padding:8px 4px}
+
+.set{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.set > label{display:block;font-size:13.5px;font-weight:700;margin-bottom:9px}
+.set .sub{font-size:12px;color:var(--soft);margin:8px 0 0}
+
+.opts{display:flex;flex-wrap:wrap;gap:7px}
+.opts button{border:1px solid var(--line);background:#FBFDFC;border-radius:9px;
+  padding:9px 13px;font-size:13.5px;font-weight:600;color:var(--soft)}
+.opts button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:transparent}
+
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.stepper button{width:44px;padding:9px 0;font-size:19px;font-weight:700;background:#FBFDFC}
+.stepper output{min-width:66px;text-align:center;font-size:14px;font-weight:700;padding:9px 4px;
+  border-left:1px solid var(--line);border-right:1px solid var(--line)}
+
+.range{display:flex;align-items:center;gap:10px}
+.range input{width:76px;font:inherit;font-size:14px;font-weight:600;text-align:center;
+  border:1px solid var(--line);border-radius:9px;padding:9px 4px;background:#FBFDFC;color:var(--ink)}
+
+.linkbtn{width:100%;background:var(--ink);color:#fff;border-radius:11px;padding:15px;
+  font-size:15px;font-weight:700;margin-top:4px}
+.linkout{font-size:12px;color:var(--soft);word-break:break-all;margin:9px 0 0;min-height:16px}
+</style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="bar">
+    <div class="titles">
+      <strong>한 문장씩 키워가는 독해력 1권</strong>
+      <span>듣기 자료</span>
+    </div>
+    <button class="gear" id="openSet" aria-label="선생님 설정">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.1"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11A1.7 1.7 0 0 0 4.67 8.6a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.24h.08A1.7 1.7 0 0 0 10.11 2.7V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9c.2.63.79 1.06 1.45 1.06H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1.03z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="main">
+    <div class="slate blank" id="slate"><p id="slateText"></p></div>
+
+    <div class="playrow">
+      <span class="numchip" id="numchipText">1번</span>
+      <button class="listen" id="listen" data-state="idle">
+        <svg class="ear" viewBox="0 0 44 40" fill="none" aria-hidden="true">
+          <path d="M13 20a9 9 0 1 1 18 0c0 4-2.6 5.6-4.2 7.2-1.3 1.3-1.8 2.4-1.8 4.3a3.5 3.5 0 0 1-7 0" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 19.5a3.2 3.2 0 0 1 6.2 0" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+          <path class="arc a1" d="M34.5 14.5a12 12 0 0 1 0 11" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+          <path class="arc a2" d="M39 10.5a18 18 0 0 1 0 19" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        </svg>
+        <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <span id="listenLabel">듣기</span>
+      </button>
+    </div>
+
+    <p class="waiting hide" id="waiting"></p>
+
+    <div class="pair">
+      <button id="again" disabled>다시</button>
+      <button id="reveal" disabled>확인</button>
+    </div>
+  </div>
+
+  <div class="track" id="track"><div class="fill" id="fill"></div></div>
+  <div class="pickscroll" id="pickscroll"><div class="picker" id="picker"></div></div>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="선생님 설정">
+  <div class="panel">
+    <header>
+      <h2>선생님 설정</h2>
+      <button class="close" id="closeSet">닫기</button>
+    </header>
+
+    <div class="set">
+      <label>오늘 할 문장</label>
+      <div class="range">
+        <input type="number" id="from" min="1" value="1" aria-label="시작 번호">
+        <span>번부터</span>
+        <input type="number" id="to" min="1" value="10" aria-label="끝 번호">
+        <span>번까지</span>
+      </div>
+    </div>
+
+    <div class="set">
+      <label>읽는 속도</label>
+      <div class="opts" id="optSpeed">
+        <button data-v="0.8">느리게</button>
+        <button data-v="1" aria-pressed="true">보통</button>
+        <button data-v="1.15">빠르게</button>
+      </div>
+    </div>
+
+    <div class="set">
+      <label>한 번 누르면 몇 번 들려줄까요</label>
+      <div class="stepper"><button data-t="reps" data-d="-1" aria-label="줄이기">−</button><output id="repsOut">2번</output><button data-t="reps" data-d="1" aria-label="늘리기">+</button></div>
+    </div>
+
+    <div class="set">
+      <label>받아쓸 시간</label>
+      <div class="opts" id="optWait">
+        <button data-v="manual" aria-pressed="true">학생이 누를 때까지</button>
+        <button data-v="timer">시간 정하기</button>
+      </div>
+      <div id="waitTimer" hidden style="margin-top:10px">
+        <div class="stepper"><button data-t="wait" data-d="-5" aria-label="줄이기">−</button><output id="waitOut">20초</output><button data-t="wait" data-d="5" aria-label="늘리기">+</button></div>
+      </div>
+    </div>
+
+    <div class="set">
+      <label>다 쓰면 다음 문장으로</label>
+      <div class="opts" id="optAuto">
+        <button data-v="0" aria-pressed="true">학생이 &lsquo;다음&rsquo; 누르기</button>
+        <button data-v="1">저절로 넘어가기</button>
+      </div>
+    </div>
+
+    <button class="linkbtn" id="makeLink">이 설정 링크 복사</button>
+    <p class="linkout" id="linkOut">설정을 담은 주소가 만들어집니다. 즐겨찾기에 넣거나 학생에게 보내세요.</p>
+  </div>
+</div>
+
+<script>
+/* ══ 여기만 바꾸면 됩니다 ═══════════════════════════════════
+   1) SENTENCES : 1번부터 순서대로. 빈 문자열이면 문장 없이 소리만.
+   2) AUDIO     : 배포 때는 아래 audioUrl 함수를 쓰세요.
+   ══════════════════════════════════════════════════════════ */
+const SENTENCES = [
+  /*   1 */ "민준이가 종이를 잘라요.",
+  /*   2 */ "지우가 스티커를 붙여요.",
+  /*   3 */ "서준이가 뚜껑을 열어요.",
+  /*   4 */ "서윤이가 물을 마셔요.",
+  /*   5 */ "현우가 김밥을 먹어요.",
+  /*   6 */ "하윤이가 문을 두드려요.",
+  /*   7 */ "지호가 강아지를 만져요.",
+  /*   8 */ "지아가 편지를 써요.",
+  /*   9 */ "도윤이가 옷을 입어요.",
+  /*  10 */ "서연이가 식탁을 닦아요.",
+  /*  11 */ "준서가 그림책을 펴요.",
+  /*  12 */ "수아가 사진을 찍는다.",
+  /*  13 */ "시우가 색종이를 접는다.",
+  /*  14 */ "예린이가 케첩을 뿌린다.",
+  /*  15 */ "하준이가 모자를 쓴다.",
+  /*  16 */ "민서가 운동화를 신는다.",
+  /*  17 */ "유준이가 편지를 보낸다.",
+  /*  18 */ "아린이가 버튼을 누른다.",
+  /*  19 */ "예준이가 에어컨을 끈다.",
+  /*  20 */ "지민이가 머리를 빗는다.",
+  /*  21 */ "건우가 저녁에 운동해요.",
+  /*  22 */ "다은이가 아침에 세수해요.",
+  /*  23 */ "우진이가 낮에 놀아요.",
+  /*  24 */ "지훈이는 금요일에 와요.",
+  /*  25 */ "승우가 밤에 자요.",
+  /*  26 */ "예성이가 학교에서 공부해요.",
+  /*  27 */ "연우가 화장실에서 양치해요.",
+  /*  28 */ "지유가 백화점에서 구경해요.",
+  /*  29 */ "유나가 바다에서 공놀이해요.",
+  /*  30 */ "아빠가 부엌에서 요리해요.",
+  /*  31 */ "현준이가 빠르게 달린다.",
+  /*  32 */ "나연이가 크게 말한다.",
+  /*  33 */ "태윤이가 높이 뛴다.",
+  /*  34 */ "시은이가 즐겁게 노래한다.",
+  /*  35 */ "수호가 신나게 춤춘다.",
+  /*  36 */ "채원이가 조용히 기다린다.",
+  /*  37 */ "민재가 깨끗하게 청소한다.",
+  /*  38 */ "은서가 느리게 걷는다.",
+  /*  39 */ "주원이가 예쁘게 웃는다.",
+  /*  40 */ "소율이가 바르게 앉는다.",
+  /*  41 */ "귀여운 강아지가 짖어요.",
+  /*  42 */ "긴 뱀이 기어가요.",
+  /*  43 */ "배고픈 동생이 울어요.",
+  /*  44 */ "파란 새가 날아요.",
+  /*  45 */ "피곤한 아빠가 쉬어요.",
+  /*  46 */ "긴장한 시훈이가 발표해요.",
+  /*  47 */ "작은 쥐가 숨어요.",
+  /*  48 */ "놀란 사슴이 도망가요.",
+  /*  49 */ "지루한 삼촌이 하품해요.",
+  /*  50 */ "화난 이모가 소리쳐요.",
+  /*  51 */ "재윤이가 부채를 빠르게 흔들어요.",
+  /*  52 */ "선생님이 문제를 쉽게 설명해요.",
+  /*  53 */ "지환이가 공을 멀리 던져요.",
+  /*  54 */ "할머니가 문을 살며시 닫아요.",
+  /*  55 */ "아빠가 차를 천천히 운전해요.",
+  /*  56 */ "승혁이가 상자를 힘껏 민다.",
+  /*  57 */ "언니가 노래를 크게 부른다.",
+  /*  58 */ "하린이가 공을 세게 찬다.",
+  /*  59 */ "지연이가 그림을 꼼꼼하게 색칠한다.",
+  /*  60 */ "재준이가 연을 높이 날린다.",
+  /*  61 */ "세아가 눈을 크게 뜬다.",
+  /*  62 */ "지혁이가 물을 가득 따른다.",
+  /*  63 */ "승현이가 사물함에 책을 넣는다.",
+  /*  64 */ "지원이가 마트에서 사탕을 산다.",
+  /*  65 */ "형이 옷걸이에 옷을 건다.",
+  /*  66 */ "강아지가 병원에서 약을 먹는다.",
+  /*  67 */ "하은이가 버스에서 음악을 듣는다.",
+  /*  68 */ "엄마가 옷장에서 원피스를 고른다.",
+  /*  69 */ "지연이가 화분에 꽃을 심어요.",
+  /*  70 */ "다람쥐가 숲에서 도토리를 찾아요.",
+  /*  71 */ "세현이가 휴지통에 쓰레기를 버려요.",
+  /*  72 */ "진우가 바닷가에서 조개를 주워요.",
+  /*  73 */ "채린이가 도서관에서 책을 빌려요.",
+  /*  74 */ "아빠가 밭에서 잡초를 뽑아요.",
+  /*  75 */ "아빠는 방금 전화를 받았다.",
+  /*  76 */ "다인이가 저녁에 그림을 그렸다.",
+  /*  77 */ "도현이는 어제 피아노를 쳤다.",
+  /*  78 */ "하늘이는 주말에 영화를 봤다.",
+  /*  79 */ "영우는 낮에 책을 읽었다.",
+  /*  80 */ "유림이는 여름방학에 춤을 배웠다.",
+  /*  81 */ "강현이는 아침에 머리를 감아요.",
+  /*  82 */ "고양이가 밤에 쥐를 잡아요.",
+  /*  83 */ "은호가 겨울에 장갑을 껴요.",
+  /*  84 */ "지안이는 월요일에 수학을 배워요.",
+  /*  85 */ "지혁이가 쉬는 시간에 블록을 쌓아요.",
+  /*  86 */ "혜린이가 점심에 줄넘기를 넘어요.",
+  /*  87 */ "태민이가 맛있는 사과를 깎는다.",
+  /*  88 */ "연우가 오래된 낙서를 지운다.",
+  /*  89 */ "우영이가 파란 모자를 벗는다.",
+  /*  90 */ "할아버지는 낡은 자전거를 탄다.",
+  /*  91 */ "아저씨가 무거운 상자를 든다.",
+  /*  92 */ "은채는 하얀 강아지를 키운다.",
+  /*  93 */ "채민이는 어려운 문제를 푼다.",
+  /*  94 */ "아빠가 맛있는 반찬을 만들어요.",
+  /*  95 */ "하진이가 빨간 리본을 묶어요.",
+  /*  96 */ "지혜가 큰 상자를 옮겨요.",
+  /*  97 */ "주호가 고장 난 장난감을 고쳐요.",
+  /*  98 */ "서율이가 뜨거운 코코아를 식혀요.",
+  /*  99 */ "다람쥐가 작은 도토리를 모아요.",
+  /* 100 */ "새는 동그란 알을 낳아요.",
+];
+const EMBEDDED  = {};        // 테스트용 내장 음원 (배포판에서는 {} 로)
+const AUDIO_DIR = "audio/";               // 예: "audio/"  → audio/001.mp3
+const TOTAL     = 100;              // 문장 번호 1~100
+
+function audioUrl(n){ return AUDIO_DIR ? AUDIO_DIR + String(n).padStart(3,"0") + ".mp3" : null; }
+
+/* ── 설정 ── */
+const S = { from:1, to:100, speed:1, reps:2, wait:"manual", waitSec:20, auto:0 };
+
+const AVAILABLE = Object.keys(EMBEDDED).map(Number).sort((a,b)=>a-b);
+const MAXNUM = TOTAL;
+
+/* 주소에 담긴 설정 읽기 */
+(function readUrl(){
+  const q = new URLSearchParams(location.search);
+  const num = (k,d)=>{const v=+q.get(k);return Number.isFinite(v)&&q.get(k)!==null?v:d;};
+  S.from=Math.max(1,num("f",S.from)); S.to=Math.min(MAXNUM,num("t",S.to));
+  if(S.to<S.from) S.to=S.from;
+  const sp=+q.get("r"); if([0.8,1,1.15].includes(sp)) S.speed=sp;
+  S.reps=Math.max(1,Math.min(4,num("n",S.reps)));
+  if(q.get("w")==="timer"){S.wait="timer";}
+  S.waitSec=Math.max(5,Math.min(60,num("d",S.waitSec)));
+  S.auto=num("a",S.auto)?1:0;
+})();
+
+/* ── 소리 ── */
+let ctx=null, node=null, buffers={}, prepping=null;
+const $=id=>document.getElementById(id);
+
+function toBuf(uri){
+  const bin=atob(uri.split(",")[1]);
+  const u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return u8.buffer;
+}
+async function wake(){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) throw new Error("이 기기에서는 소리를 재생할 수 없습니다");
+  // 아이폰 무음 스위치가 켜져 있어도 소리가 나게 함 (Safari 16.4+)
+  try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
+  ctx=ctx||new AC();
+  if(ctx.state==="suspended") await ctx.resume();
+  if(ctx.state!=="running") throw new Error("소리가 잠겨 있습니다. 무음 스위치를 확인해 주세요");
+  return ctx;
+}
+async function load(n){
+  if(buffers[n]) return buffers[n];
+  const c=await wake();
+  let ab;
+  if(EMBEDDED[n]) ab=toBuf(EMBEDDED[n]);
+  else{
+    const url=audioUrl(n); if(!url) throw new Error("음원이 없습니다");
+    const res=await fetch(url); if(!res.ok) throw new Error("음원을 찾을 수 없습니다");
+    ab=await res.arrayBuffer();
+  }
+  buffers[n]=await new Promise((ok,no)=>c.decodeAudioData(ab,ok,no));
+  return buffers[n];
+}
+function silence(){ if(node){node.onended=null;try{node.stop()}catch(e){} node=null;} }
+function once(buf){
+  return new Promise(ok=>{
+    silence();
+    node=ctx.createBufferSource();
+    node.buffer=buf; node.playbackRate.value=S.speed;
+    node.connect(ctx.destination);
+    node.onended=()=>{node=null;ok()};
+    node.start();
+  });
+}
+
+/* ── 화면 ── */
+let list=[], idx=0, done=new Set(), session=0, timer=null;
+
+function buildList(){
+  list=[];
+  for(let n=S.from;n<=S.to;n++) list.push(n);
+  if(!list.length) list=[1];
+  idx=Math.min(idx,list.length-1);
+}
+
+function buildPicker(){
+  const el=$("picker"); el.innerHTML="";
+  list.forEach((n,i)=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=n;
+    b.setAttribute("aria-label",n+"번 문장");
+    b.addEventListener("click",()=>go(i,true));
+    el.appendChild(b);
+  });
+}
+function paintPicker(){
+  [...$("picker").children].forEach((b,i)=>{
+    b.classList.toggle("done",done.has(list[i]));
+    b.setAttribute("aria-current",i===idx);
+  });
+}
+function scrollToCurrent(){
+  const b=$("picker").children[idx];
+  if(b) b.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+function paint(){
+  const n=list[idx];
+  $("numchipText").textContent=n+"번";
+  $("fill").style.width = Math.round(done.size/list.length*100)+"%";
+  paintPicker();
+  showText(false);
+  scrollToCurrent();
+}
+
+function showText(on){
+  const t=SENTENCES[list[idx]-1];
+  const slate=$("slate"), p=$("slateText");
+  if(on && t){ slate.classList.remove("blank"); p.textContent=t; }
+  else if(on && !t){ slate.classList.add("blank"); p.textContent="문장이 등록되지 않았습니다"; }
+  else { slate.classList.add("blank"); p.textContent=""; }
+}
+
+function setWaiting(text){
+  const w=$("waiting");
+  if(text){ w.textContent=text; w.classList.remove("hide"); }
+  else { w.classList.add("hide"); }
+}
+
+function go(i,autoplay){
+  session++; silence(); clearInterval(timer);
+  idx=Math.max(0,Math.min(list.length-1,i));
+  $("listen").dataset.state="idle"; $("listenLabel").textContent="듣기";
+  $("again").disabled=true;
+  const r=$("reveal"); r.disabled=true; r.dataset.mode=""; r.textContent="확인";
+  setWaiting("");
+  paint();
+  if(autoplay) playAll();
+}
+
+async function playAll(){
+  const my=++session;
+  const n=list[idx];
+  const btn=$("listen");
+  btn.dataset.state="loading"; $("listenLabel").textContent="…";
+  let buf;
+  try{ buf=await load(n); }
+  catch(e){ btn.dataset.state="idle"; $("listenLabel").textContent="듣기";
+            setWaiting(e.message||"소리를 불러올 수 없습니다"); return; }
+  if(my!==session) return;
+
+  for(let r=1;r<=S.reps;r++){
+    if(my!==session) return;
+    btn.dataset.state="playing"; $("listenLabel").textContent="듣는 중";
+    setWaiting(S.reps>1 ? r+" / "+S.reps : "");
+    await once(buf);
+    if(my!==session) return;
+    if(r<S.reps) await new Promise(k=>setTimeout(k,700));
+  }
+  btn.dataset.state="idle"; $("listenLabel").textContent="다시 듣기";
+  $("again").disabled=false;
+  done.add(n); paint();
+  $("reveal").disabled=false;
+  if(S.wait==="timer") countdown(my);
+  else setWaiting("다 쓰면 확인을 누르세요");
+}
+
+function countdown(my){
+  let left=S.waitSec;
+  setWaiting("받아쓸 시간 "+left+"초");
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    if(my!==session){clearInterval(timer);return;}
+    left--;
+    if(left<=0){ clearInterval(timer); revealNow(); }
+    else setWaiting("받아쓸 시간 "+left+"초");
+  },1000);
+}
+
+$("listen").addEventListener("click",()=>{
+  if($("listen").dataset.state==="playing"){ session++; silence();
+    $("listen").dataset.state="idle"; $("listenLabel").textContent="다시 듣기"; setWaiting(""); return; }
+  playAll();
+});
+$("again").addEventListener("click",playAll);
+
+function revealNow(){
+  showText(true);
+  setWaiting(idx<list.length-1 ? "맞게 썼는지 살펴보세요" : "다 했어요");
+  const r=$("reveal");
+  r.disabled=false; r.dataset.mode="next";
+  r.textContent = idx<list.length-1 ? "다음 문장" : "끝";
+  if(S.auto && idx<list.length-1) setTimeout(()=>{ if(idx<list.length-1) go(idx+1); },2500);
+}
+$("reveal").addEventListener("click",()=>{
+  if($("reveal").dataset.mode==="next"){ if(idx<list.length-1) go(idx+1); return; }
+  revealNow();
+});
+
+/* ── 설정 화면 ── */
+$("openSet").addEventListener("click",()=>{ session++; silence(); syncPanel(); $("sheet").setAttribute("open",""); });
+$("closeSet").addEventListener("click",closePanel);
+$("sheet").addEventListener("click",e=>{ if(e.target===$("sheet")) closePanel(); });
+document.addEventListener("keydown",e=>{ if(e.key!=="Escape")return; if($("sheet").hasAttribute("open")) closePanel(); });
+
+function closePanel(){
+  $("sheet").removeAttribute("open");
+  buildList(); buildPicker(); go(0);
+}
+
+function group(id,key,cast){
+  $(id).addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b)return;
+    [...$(id).children].forEach(c=>c.setAttribute("aria-pressed",c===b));
+    S[key]=cast?cast(b.dataset.v):b.dataset.v;
+    if(key==="wait") $("waitTimer").hidden = S.wait!=="timer";
+  });
+}
+group("optSpeed","speed",Number);
+group("optWait","wait");
+group("optAuto","auto",Number);
+
+document.querySelectorAll(".stepper button").forEach(b=>b.addEventListener("click",()=>{
+  const d=+b.dataset.d;
+  if(b.dataset.t==="reps"){ S.reps=Math.max(1,Math.min(4,S.reps+d)); $("repsOut").textContent=S.reps+"번"; }
+  else { S.waitSec=Math.max(5,Math.min(60,S.waitSec+d)); $("waitOut").textContent=S.waitSec+"초"; }
+}));
+
+$("from").addEventListener("change",e=>{
+  S.from=Math.max(1,Math.min(MAXNUM,+e.target.value||1));
+  if(S.to<S.from){S.to=S.from;$("to").value=S.to;}
+  e.target.value=S.from;
+});
+$("to").addEventListener("change",e=>{
+  S.to=Math.max(S.from,Math.min(MAXNUM,+e.target.value||S.from));
+  e.target.value=S.to;
+});
+
+function syncPanel(){
+  $("from").value=S.from; $("from").max=MAXNUM;
+  $("to").value=S.to;     $("to").max=MAXNUM;
+  const mark=(id,v)=>[...$(id).children].forEach(c=>c.setAttribute("aria-pressed",c.dataset.v===String(v)));
+  mark("optSpeed",S.speed); mark("optWait",S.wait); mark("optAuto",S.auto);
+  $("waitTimer").hidden = S.wait!=="timer";
+  $("repsOut").textContent=S.reps+"번";
+  $("waitOut").textContent=S.waitSec+"초";
+}
+
+$("makeLink").addEventListener("click",async()=>{
+  const q=new URLSearchParams({f:S.from,t:S.to,r:S.speed,n:S.reps,w:S.wait,d:S.waitSec,a:S.auto});
+  const url=location.origin+location.pathname+"?"+q;
+  let msg="주소를 복사했습니다. 즐겨찾기에 넣어두세요.";
+  try{ await navigator.clipboard.writeText(url); }
+  catch(e){ msg="아래 주소를 길게 눌러 복사하세요."; }
+  $("linkOut").textContent=msg+"\n"+url;
+});
+
+/* 시작 */
+buildList(); buildPicker(); syncPanel(); go(0);
+</script>
+</body>
+</html>
