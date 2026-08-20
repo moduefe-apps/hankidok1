@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>한 문장씩 키우는 독해력 · 문장 듣기</title>
+<title>한 문장씩 키워가는 독해력 1권 · 듣기 자료</title>
 <style>
 :root{
   --paper:#E9F1EE;
@@ -403,9 +403,10 @@ const SENTENCES = [
 ];
 const EMBEDDED  = {};        // 테스트용 내장 음원 (배포판에서는 {} 로)
 const AUDIO_DIR = "audio/";               // 예: "audio/"  → audio/001.mp3
+const VERSION   = "2";              // 음성을 새로 올릴 때마다 숫자를 1씩 올리세요
 const TOTAL     = 100;              // 문장 번호 1~100
 
-function audioUrl(n){ return AUDIO_DIR ? AUDIO_DIR + String(n).padStart(3,"0") + ".mp3" : null; }
+function audioUrl(n){ return AUDIO_DIR ? AUDIO_DIR + String(n).padStart(3,"0") + ".mp3" + (VERSION ? "?v="+VERSION : "") : null; }
 
 /* ── 설정 ── */
 const S = { from:1, to:100, speed:1, reps:2, wait:"manual", waitSec:20, auto:0 };
