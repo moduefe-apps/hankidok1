@@ -83,8 +83,8 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
 }
 
 /* 번호 고르기 */
-.pickscroll{flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:10px;
-  padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.pickscroll{flex:1 1 auto;min-height:0;overflow-y:auto;margin:10px -6px 0;
+  padding:7px 6px 12px;-webkit-overflow-scrolling:touch}
 .picker{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
 .picker button{
   aspect-ratio:1;border:1.5px solid var(--line);background:#FBFDFC;border-radius:13px;
@@ -266,7 +266,7 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
     </div>
 
     <div class="set">
-      <label>한 번 누르면 몇 번 들려줄까요</label>
+      <label>듣기 반복 횟수</label>
       <div class="stepper"><button data-t="reps" data-d="-1" aria-label="줄이기">−</button><output id="repsOut">2번</output><button data-t="reps" data-d="1" aria-label="늘리기">+</button></div>
     </div>
 
